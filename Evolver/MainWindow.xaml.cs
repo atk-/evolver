@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Evolver
 {
@@ -49,9 +50,11 @@ namespace Evolver
             });
         }
 
+        private static Action emptyDelegate = delegate { };
+
         private void OnTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            this.Dispatcher.Invoke(() => { Canvas.Source = evolver.GetBitmap(); });
+            Canvas.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
         }
 
         public void SetModel(string imagePath)

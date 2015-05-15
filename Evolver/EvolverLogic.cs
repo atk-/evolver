@@ -23,12 +23,16 @@ namespace Evolver
 
         private System.Object canvasLock = new System.Object();
 
-        private RenderTargetBitmap CanvasBitmap;
+        public RenderTargetBitmap CanvasBitmap;
+
+        int numGenerations = 0;
 
         public EvolverLogic(string modelImageFile, int canvasWidth, int canvasHeight)
         {
             this.canvasWidth = canvasWidth;
             this.canvasHeight = canvasHeight;
+
+            CanvasBitmap = new RenderTargetBitmap(canvasWidth, canvasHeight, 100, 100, PixelFormats.Pbgra32);
 
             InitModelImage(modelImageFile);
 
@@ -46,7 +50,9 @@ namespace Evolver
         public BitmapSource GetBitmap()
         {            
             //CanvasBitmap.Freeze();
-            return CanvasBitmap;
+            return Dispatcher.CurrentDispatcher.Invoke(() =>
+                CanvasBitmap);
+            
         }
 
         private void InitModelImage(string imageFile)
@@ -102,6 +108,7 @@ namespace Evolver
         public void Iterate()
         {
             // do one iteration: mutate, repaint, compute fitness, apply/discard changes
+            numGenerations++;
             MutateAll();
             PaintBitmap();
 
@@ -112,7 +119,7 @@ namespace Evolver
             canvas.CopyPixels(canvasData, canvasStride, 0);
 
             long fitness = EvolverLogic.ComputeFitness(canvasData, modelData);
-            Console.WriteLine(fitness + " < " + bestFitness + "? " + (fitness < bestFitness));
+            Console.WriteLine("#{0}: {1} < {2}? {3}", numGenerations, fitness, bestFitness, (fitness < bestFitness));
 
             if (fitness <= bestFitness)
             {
@@ -136,8 +143,8 @@ namespace Evolver
         {
             lock (canvasLock)
             {
-                Dispatcher.CurrentDispatcher.Invoke(() =>
-                {
+                //Dispatcher.CurrentDispatcher.Invoke(() =>
+                //{
                     var dv = new DrawingVisual();
                     var dc = dv.RenderOpen();
 
@@ -147,12 +154,9 @@ namespace Evolver
                     }
                     dc.Close();
 
-
-                    CanvasBitmap = new RenderTargetBitmap(canvasWidth, canvasHeight, 100, 100, PixelFormats.Pbgra32);
+                    CanvasBitmap.Clear();
                     CanvasBitmap.Render(dv);
-                    CanvasBitmap.Freeze();
-                    Console.WriteLine("PaintBitmap");
-                });
+                //});
             }
         }
 
