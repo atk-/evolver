@@ -43,18 +43,6 @@ namespace Evolver
         }
     }
 
-    //public class Point
-    //{
-    //    public double X;
-    //    public double Y;
-
-    //    public Point(double x, double y)
-    //    {
-    //        this.X = x;
-    //        this.Y = y;
-    //    }
-    //}
-
     public abstract class Primitive
     {
         public Color color;
@@ -70,6 +58,11 @@ namespace Evolver
 
         public abstract void SaveState();
         public abstract void RestoreState();
+
+        public void UpdateBrush()
+        {
+            brush = new SolidColorBrush(color);
+        }
     }
 
     public class Rectangle : Primitive
@@ -129,52 +122,49 @@ namespace Evolver
 
         public override void SaveState()
         {
-            _ul = ul; _lr = lr;
-            _brush = brush.Clone();
+            _ul = ul;
+            _lr = lr;
             _color = color;
             hasSaveState = true;
         }
 
         public override void RestoreState()
         {
+            if (!hasSaveState) return;
             ul = _ul;
             lr = _lr;
-            brush = _brush.Clone();
             color = _color;
+            brush = new SolidColorBrush(color);
+
             hasSaveState = false;
         }
 
-        public override void Mutate(int width, int height)
+        public override void Mutate(int canvasWidth, int canvasHeight)
         {
             // store values
             SaveState();
 
-            switch (R.Int(8)) {
-                case 0:
-                    ul.X = R.Int(width);
-                    break;
-                case 1:
-                    ul.Y = R.Int(height);
-                    break;
-                case 2:
-                    lr.X = R.Int(width);
-                    break;
-                case 3:
-                    lr.Y = R.Int(height);
-                    break;
-                case 4:
-                    color.R = R.Byte();
-                    break;
-                case 5:
-                    color.G = R.Byte();
-                    break;
-                case 6:
-                    color.B = R.Byte();
-                    break;
-                case 7:
-                    color.A = R.Byte();
-                    break;
+            if (R.Int(10) == 0)
+            {
+                ul.X = R.Int(canvasWidth);
+                ul.Y = R.Int(canvasHeight);
             }
+
+            if (R.Int(10) == 0)
+            {
+                lr.X = R.Int(canvasWidth);
+                lr.Y = R.Int(canvasHeight);
+            }
+            
+            if (R.Int(10) == 0)
+                    color.R = R.Byte();
+            if (R.Int(10) == 0)
+                    color.G = R.Byte();
+            if (R.Int(10) == 0)
+                    color.B = R.Byte();
+            if (R.Int(10) == 0)
+                    color.A = R.Byte();
+            
             brush = new SolidColorBrush(color);
         }
     }
@@ -226,10 +216,29 @@ namespace Evolver
 
         public override void Mutate(int cWidth, int cHeight)
         {
+            SaveState();
 
-            int i = R.Int(points.Count());
-            points[i] = R.Point(R.Int(cWidth), R.Int(cHeight));
+            if (R.Random() < .1) { 
+                int i = R.Int(points.Count());
+                points[i] = R.Point(R.Int(cWidth), R.Int(cHeight));
+            }
 
+            if (R.Random() < .1)
+            {
+                color.R = R.Byte();
+            }
+
+            if (R.Random() < .1)
+            {
+                color.G = R.Byte();
+            }
+
+            if (R.Random() < .1)
+            {
+                color.B = R.Byte();
+            }
+
+            UpdateBrush();
             // keep geometry updated
             ComputeGeometry();
         }
@@ -238,7 +247,9 @@ namespace Evolver
         {
             brush = _brush.Clone();
             color = _color;
+            //Console.Write("restoring " + points);
             points = _points.Clone();
+            //Console.WriteLine(" to " + points);
             ComputeGeometry();
             hasSaveState = false;
         }

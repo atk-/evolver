@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace Evolver
 {
-    class EvolverLogic
+    public class EvolverLogic
     {
         List<Primitive> shapes = new List<Primitive>();
         long bestFitness;
@@ -17,7 +19,11 @@ namespace Evolver
         byte[] modelData;
         byte[] canvasData;
 
-        public RenderTargetBitmap CanvasBitmap { get; private set; }
+        bool running = false;
+
+        private System.Object canvasLock = new System.Object();
+
+        private RenderTargetBitmap CanvasBitmap;
 
         public EvolverLogic(string modelImageFile, int canvasWidth, int canvasHeight)
         {
@@ -26,13 +32,21 @@ namespace Evolver
 
             InitModelImage(modelImageFile);
 
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 10; i++)
             {
                 if (i < 0)
                     shapes.Add(Rectangle.CreateRandom(canvasWidth, canvasHeight));
                 else
                     shapes.Add(Polygon.CreateRandom(3, canvasWidth, canvasHeight));
             }
+
+            bestFitness = long.MaxValue;
+        }
+
+        public BitmapSource GetBitmap()
+        {            
+            //CanvasBitmap.Freeze();
+            return CanvasBitmap;
         }
 
         private void InitModelImage(string imageFile)
@@ -61,6 +75,30 @@ namespace Evolver
             return diff;
         }
 
+        public void Toggle()
+        {
+            running = !running;
+        }
+
+        public void MainLoop()
+        {
+            int loops = 0;
+            while (true)
+            {
+                if (running)
+                {
+                    loops += 1;
+                    this.Iterate();
+                    if (loops % 100 == 0)
+                    {
+                        Console.WriteLine(loops);
+                    }
+
+                }
+                Thread.Sleep(11);
+            }
+        }
+
         public void Iterate()
         {
             // do one iteration: mutate, repaint, compute fitness, apply/discard changes
@@ -74,7 +112,7 @@ namespace Evolver
             canvas.CopyPixels(canvasData, canvasStride, 0);
 
             long fitness = EvolverLogic.ComputeFitness(canvasData, modelData);
-            Console.WriteLine(fitness + " < " + bestFitness + "?");
+            Console.WriteLine(fitness + " < " + bestFitness + "? " + (fitness < bestFitness));
 
             if (fitness <= bestFitness)
             {
@@ -82,6 +120,7 @@ namespace Evolver
             }
             else
             {
+                // revert this round of mutations and roll back the changes
                 foreach (Primitive p in shapes)
                 {
                     if (p.hasSaveState)
@@ -89,33 +128,44 @@ namespace Evolver
                         p.RestoreState();
                     }
                 }
+                PaintBitmap(); // rather store and recall the old one
             }
         }
 
         public void PaintBitmap()
         {
-            var dv = new DrawingVisual();
-            var dc = dv.RenderOpen();
-
-            foreach (Primitive p in shapes)
+            lock (canvasLock)
             {
-                p.Paint(dc);
+                Dispatcher.CurrentDispatcher.Invoke(() =>
+                {
+                    var dv = new DrawingVisual();
+                    var dc = dv.RenderOpen();
+
+                    foreach (Primitive p in shapes)
+                    {
+                        p.Paint(dc);
+                    }
+                    dc.Close();
+
+
+                    CanvasBitmap = new RenderTargetBitmap(canvasWidth, canvasHeight, 100, 100, PixelFormats.Pbgra32);
+                    CanvasBitmap.Render(dv);
+                    CanvasBitmap.Freeze();
+                    Console.WriteLine("PaintBitmap");
+                });
             }
-            dc.Close();
-
-            CanvasBitmap = new RenderTargetBitmap(canvasWidth, canvasHeight, 100, 100, PixelFormats.Pbgra32);
-
-            CanvasBitmap.Render(dv);
         }
 
         private void MutateAll()
         {
+            //R.Choice(shapes).Mutate(canvasWidth, canvasHeight);
+
+            //int i = R.Int(shapes.Count());
+            //int j = R.Int(shapes.Count());
+
             foreach (Primitive p in shapes)
             {
-                if (R.Int(100) == 1)
-                {
-                    p.Mutate(canvasWidth, canvasHeight);
-                }
+                p.Mutate(canvasWidth, canvasHeight);
             }
         }
     }

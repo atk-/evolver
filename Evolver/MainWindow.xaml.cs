@@ -29,6 +29,8 @@ namespace Evolver
 
         int canvasWidth, canvasHeight;
 
+        System.Timers.Timer timer = new System.Timers.Timer(200);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -38,8 +40,18 @@ namespace Evolver
 
             canvasWidth = (int)Canvas.Width;
             canvasHeight = (int)Canvas.Height;
-            
-            evolver = new EvolverLogic(modelImageFile, canvasWidth, canvasHeight);
+
+            timer.Elapsed += OnTimerElapsed;
+
+            Task.Run(() => {
+                evolver = new EvolverLogic(modelImageFile, canvasWidth, canvasHeight);
+                evolver.MainLoop();
+            });
+        }
+
+        private void OnTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            this.Dispatcher.Invoke(() => { Canvas.Source = evolver.GetBitmap(); });
         }
 
         public void SetModel(string imagePath)
@@ -50,8 +62,11 @@ namespace Evolver
         public void Toggle(object sender, RoutedEventArgs e)
         {
             //evolver.Iterate();
-            Iterate100(sender, e);
-            Canvas.Source = evolver.CanvasBitmap;
+
+            evolver.Toggle();
+            timer.Enabled = !timer.Enabled;
+            //Iterate100(sender, e);
+            //Canvas.Source = evolver.CanvasBitmap;
         }
 
         public void Iterate100(object sender, RoutedEventArgs e)
