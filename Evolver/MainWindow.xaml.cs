@@ -44,17 +44,24 @@ namespace Evolver
 
             timer.Elapsed += OnTimerElapsed;
 
+            Canvas.SourceUpdated += Canvas_SourceUpdated;
+
             Task.Run(() => {
                 evolver = new EvolverLogic(modelImageFile, canvasWidth, canvasHeight);
                 evolver.MainLoop();
             });
         }
 
+        private void Canvas_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            Console.WriteLine("canvas source updated");
+        }
+
         private static Action emptyDelegate = delegate { };
 
         private void OnTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            Canvas.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
+            //Canvas.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
         }
 
         public void SetModel(string imagePath)
