@@ -92,7 +92,7 @@ namespace Evolver
 
         public void SaveCanvasBitmap()
         {
-            Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+            App.Current.Dispatcher.Invoke(() =>
             {
                 using (Stream s = new FileStream("canvas.png", FileMode.Create))
                 {

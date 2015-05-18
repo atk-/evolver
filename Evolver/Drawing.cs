@@ -54,22 +54,19 @@ namespace Evolver
 
         public RenderTargetBitmap PaintBitmap()
         {
-            return Dispatcher.CurrentDispatcher.Invoke(() =>
+            var dv = new DrawingVisual();
+            var dc = dv.RenderOpen();
+
+            foreach (Primitive p in shapes)
             {
-                var dv = new DrawingVisual();
-                var dc = dv.RenderOpen();
+                p.Paint(dc);
+            }
+            dc.Close();
 
-                foreach (Primitive p in shapes)
-                {
-                    p.Paint(dc);
-                }
-                dc.Close();
-
-                RenderTargetBitmap bmp = new RenderTargetBitmap(Width, Height, 100, 100, PixelFormats.Pbgra32);
-                bmp.Render(dv);
-                //CanvasBitmap = bmp;
-                return bmp;
-            });
+            RenderTargetBitmap bmp = new RenderTargetBitmap(Width, Height, 100, 100, PixelFormats.Pbgra32);
+            bmp.Render(dv);
+            //CanvasBitmap = bmp;
+            return bmp;
         }
 
         public Drawing Clone()
