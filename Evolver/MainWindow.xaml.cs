@@ -62,6 +62,7 @@ namespace Evolver
         private void OnTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             //Canvas.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
+            evolver.InvokePropertyChanged("CanvasBitmap");
         }
 
         public void SetModel(string imagePath)

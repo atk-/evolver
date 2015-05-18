@@ -59,6 +59,8 @@ namespace Evolver
         public abstract void SaveState();
         public abstract void RestoreState();
 
+        public abstract Primitive Clone();
+
         public void UpdateBrush()
         {
             brush = new SolidColorBrush(color);
@@ -118,6 +120,14 @@ namespace Evolver
 
         public override void Paint(DrawingContext dc) {
             dc.DrawRectangle(brush, null, new System.Windows.Rect(ul.X, ul.Y, Width, Height));
+        }
+
+        public override Primitive Clone()
+        {
+            var copy = new Rectangle(this.ul, this.lr);
+            copy.color = this.color;
+            copy.brush = this.brush.Clone();
+            return copy;
         }
 
         public override void SaveState()
@@ -260,6 +270,15 @@ namespace Evolver
             _color = color;
             _brush = brush.Clone();
             hasSaveState = true;
+        }
+
+        public override Primitive Clone()
+        {
+            Polygon copy = new Polygon(this.points.Clone());
+            copy.color = this.color;
+            copy.brush = this.brush.Clone();
+
+            return copy;
         }
     }
 
